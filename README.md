@@ -165,7 +165,7 @@ No manual steps. No "you need to run this notebook first." No "change this path.
 
 | Role | Name | GitHub Username |
 |------|------|-----------------|
-| Data Engineering Lead | | |
+| Data Engineering Lead | Clifton Rand |
 | ML / DNN Lead | | |
 | CNN Lead | | |
 | NLP Lead | | |
