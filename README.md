@@ -167,7 +167,7 @@ No manual steps. No "you need to run this notebook first." No "change this path.
 |------|------|-----------------|
 | Data Engineering Lead | | |
 | ML / DNN Lead | | |
-| CNN Lead | | |
+| CNN Lead | Jesse Goff | Jfrankgoff |
 | NLP Lead | | |
 
 ---
