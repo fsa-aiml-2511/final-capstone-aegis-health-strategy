@@ -166,7 +166,7 @@ No manual steps. No "you need to run this notebook first." No "change this path.
 | Role | Name | GitHub Username |
 |------|------|-----------------|
 | Data Engineering Lead | | |
-| ML / DNN Lead | | | - Sean McManus
+| ML / DNN Lead | | | - Sean McManus the Manus-Man from Mantonberry
 | CNN Lead | | |
 | NLP Lead | | |
 
