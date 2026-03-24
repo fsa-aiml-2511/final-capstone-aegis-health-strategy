@@ -165,6 +165,10 @@ No manual steps. No "you need to run this notebook first." No "change this path.
 
 | Role | Name | GitHub Username |
 |------|------|-----------------|
+| Data Engineering Lead | | |
+| ML / DNN Lead | | | - Sean McManus the Manus-Man from Mantonberry mansion
+| CNN Lead | | |
+| NLP Lead | | |
 | Data Engineering Lead | clifton rand |
 | ML / DNN Lead | | |
 | CNN Lead | Jesse Goff | Jfrankgoff |
