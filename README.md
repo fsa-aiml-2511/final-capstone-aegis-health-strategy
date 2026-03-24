@@ -167,8 +167,8 @@ No manual steps. No "you need to run this notebook first." No "change this path.
 |------|------|-----------------|
 | Data Engineering Lead | clifton rand |
 | ML / DNN Lead | | |
-| CNN Lead | | |
-| NLP Lead | NLP lead | Brodie Ellis| brodiedellis-sys
+| CNN Lead | Jesse Goff | Jfrankgoff |
+| NLP Lead | Brodie Ellis | brodiedellis-sys
 
 ---
 
