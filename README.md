@@ -165,10 +165,10 @@ No manual steps. No "you need to run this notebook first." No "change this path.
 
 | Role | Name | GitHub Username |
 |------|------|-----------------|
-| Data Engineering Lead | Clifton r |
+| Data Engineering Lead | clifton rand |
 | ML / DNN Lead | | |
 | CNN Lead | Jesse Goff | Jfrankgoff |
-| NLP Lead | | |
+| NLP Lead | Brodie Ellis | brodiedellis-sys
 
 ---
 
