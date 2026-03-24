@@ -169,6 +169,10 @@ No manual steps. No "you need to run this notebook first." No "change this path.
 | ML / DNN Lead - Sean McManus the Manus-Man at Manberry Mansion from Manchester
 | CNN Lead | | |
 | NLP Lead | | |
+| Data Engineering Lead | clifton rand |
+| ML / DNN Lead | | |
+| CNN Lead | Jesse Goff | Jfrankgoff |
+| NLP Lead | Brodie Ellis | brodiedellis-sys
 
 ---
 
