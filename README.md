@@ -165,7 +165,7 @@ No manual steps. No "you need to run this notebook first." No "change this path.
 
 | Role | Name | GitHub Username |
 |------|------|-----------------|
-| Data Engineering Lead | Clifton Rand |  |
+| Data Engineering Lead | Clifton Rand | Clifton-Rand |
 | ML / DNN Lead | Sean McManus the Manus-Man at Manberry Mansion from Manchester |  |
 | CNN Lead | Jesse Goff | Jfrankgoff |
 | NLP Lead | Brodie Ellis | brodiedellis-sys
