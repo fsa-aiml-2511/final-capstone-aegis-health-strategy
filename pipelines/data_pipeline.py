@@ -291,7 +291,7 @@ def engineer_features(df):
     if 'readmitted' in df.columns:
         df = df.drop(columns=['readmitted'], errors='ignore')
 
-    #drop encounter and patient id
+    #drop encounter, note: due to patient id needed for results, it must be dropped in training and predicting
     if 'patient_nbr' in df.columns:
         df = df.drop(columns=['patient_nbr'], errors='ignore')
 

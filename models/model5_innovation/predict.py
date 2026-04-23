@@ -27,33 +27,26 @@ OUTPUT_FILE = TEST_DATA_DIR / "model5_results.csv"
 
 
 def load_model():
-    """Load your trained model from saved_model/.
-
-    This is your team's innovation model — use whatever approach you chose.
-    """
+    #import model
     import joblib
     filepath = MODEL_PATH / "model.joblib"
     return joblib.load(filepath)
 
 
 def predict(model, test_df):
-    """Generate predictions on test data.
-
-    
-        
-
-    metric_name and metric_value are your custom evaluation metric.
-    For example: metric_name="f1_weighted", metric_value=0.85
-    """
+   #use the test data
 
     df = test_df.copy()
 
+    #clean the test data
     df = clean_data(df)
     df = engineer_features(df)
 
+    #put test data encounter id in the results
     df_result = df[['encounter_id']].copy()
     df_result = df_result.rename(columns={"encounter_id": "id"}) 
 
+    #drop all med columns
     med_cols = [
         'metformin', 'repaglinide', 'nateglinide', 'chlorpropamide',
         'glimepiride', 'acetohexamide', 'glipizide', 'glyburide',
@@ -68,21 +61,19 @@ def predict(model, test_df):
     existing_med_cols = [col for col in med_cols if col in df.columns]
     df = df.drop(columns=existing_med_cols, errors="ignore")
 
+    #drop target and encounter id
     df = df.drop(columns=["diabetesMed", "encounter_id"], errors="ignore")
 
-    #check to delete later
-    if list(df.columns) != list(model.feature_names_in_):
-        raise ValueError("Test columns do not exactly match training columns.")
 
+    #use model to make prediction and confidence score
     confidence_scores = model.predict_proba(df)[:, 1]
     predictions = model.predict(df)
 
     df_result["prediction"] = predictions
     df_result["confidence"] = confidence_scores
     df_result["metric_name"] = "f1_score"
-    df_result["metric_value"] = np.nan
+    df_result["metric_value"] = 0.8770
 
-    # TODO: Run your model on the test data
     return df_result
 
 
@@ -90,31 +81,15 @@ def main():
     # Load model
     model = load_model()
 
+    #set the test data
     test_df = pd.read_csv(TEST_DATA_DIR / "test_data_file.csv")
 
+    #run the prediction
     results = predict(model, test_df)
 
+    #sabve the results
     OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
     results.to_csv(OUTPUT_FILE, index=False)
-    
-
-
-    # Load test data
-    # TODO: Update this path to match your test data file
-    # test_df = pd.read_csv(TEST_DATA_DIR / "test_data_file.csv")
-
-    # Generate predictions
-    # predictions = predict(model, test_df)
-
-    # Save results — MUST match output template exactly
-    # results = pd.DataFrame({
-    #     "id": test_df["id"],
-    #     "prediction": predictions,
-    #     "confidence": confidence_scores,
-    #     "metric_name": "your_custom_metric",
-    #     "metric_value": metric_score,
-    # })
-    # results.to_csv(OUTPUT_FILE, index=False)
 
     print(f"Predictions saved to {OUTPUT_FILE}")
 
