@@ -90,45 +90,312 @@ Explore our platform to discover how intelligent healthcare solutions can drive 
 
 **Protecting Patients. Powering Decisions. Advancing Healthcare.**
 """)
-
+#model 1 ----
 elif model_choice == "Model 1: Traditional ML":
-    st.header("Model 1: Traditional ML")
+    st.header("Model 1: Readmission Risk — Traditional ML")
+    st.write("Predicts whether a diabetic patient will be readmitted to the hospital using XGBoost.")
 
-    # ---- INTEGRATION PATTERN (uncomment and adapt) ----
-    # @st.cache_resource
-    # def load_model1():
-    #     import joblib
-    #     return joblib.load("models/model1_traditional_ml/saved_model/model.joblib")
-    #
-    # model = load_model1()
-    #
-    # # Create input fields for your features
-    # col1, col2 = st.columns(2)
-    # with col1:
-    #     feature_1 = st.number_input("Feature 1", value=0.0)
-    #     feature_2 = st.selectbox("Feature 2", ["Option A", "Option B"])
-    # with col2:
-    #     feature_3 = st.slider("Feature 3", 0, 100, 50)
-    #
-    # if st.button("Predict"):
-    #     import pandas as pd
-    #     input_df = pd.DataFrame([{"feature_1": feature_1, ...}])
-    #     prediction = model.predict(input_df)
-    #     probability = model.predict_proba(input_df)
-    #     st.success(f"Prediction: {prediction[0]}")
-    #     st.write(f"Confidence: {probability.max():.2%}")
-    # ---- END PATTERN ----
+    @st.cache_resource
+    def load_model1():
+        model_url = "https://huggingface.co/jfranklingoff/Capstone-Project-Traditional-ML/resolve/main/model.joblib"
+        cols_url  = "https://huggingface.co/jfranklingoff/Capstone-Project-Traditional-ML/resolve/main/feature_cols.joblib"
 
-    st.info("This is the House of Funk.")
+        model_path = Path("model1_model.joblib")
+        cols_path  = Path("model1_feature_cols.joblib")
 
+        if not model_path.exists():
+            r = requests.get(model_url)
+            r.raise_for_status()
+            model_path.write_bytes(r.content)
+
+        if not cols_path.exists():
+            r = requests.get(cols_url)
+            r.raise_for_status()
+            cols_path.write_bytes(r.content)
+
+        model = joblib.load(model_path)
+        feature_cols = joblib.load(cols_path)
+        return model, feature_cols
+
+    with st.spinner("Loading Model 1..."):
+        model1, feature_cols1 = load_model1()
+
+    st.subheader("Enter Patient Information")
+
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        age_options = {
+            "0–10": 5, "10–20": 15, "20–30": 25, "30–40": 35, "40–50": 45,
+            "50–60": 55, "60–70": 65, "70–80": 75, "80–90": 85, "90–100": 95
+        }
+        age_label = st.selectbox("Age Range", list(age_options.keys()), key="m1_age")
+        age = age_options[age_label]
+
+        gender = st.selectbox("Gender", ["Male", "Female"], key="m1_gender")
+        gender_encoded = 0 if gender == "Male" else 1
+
+        race = st.selectbox("Race", ["AfricanAmerican", "Asian", "Caucasian", "Hispanic"], key="m1_race")
+
+        time_in_hospital = st.number_input("Days in Hospital", min_value=1, max_value=14, value=4, key="m1_los")
+
+        weight_checked = st.selectbox("Weight Recorded?", ["No", "Yes"], key="m1_weight")
+        weight_checked = 1 if weight_checked == "Yes" else 0
+
+    with col2:
+        num_lab_procedures = st.number_input("Number of Lab Procedures", min_value=1, max_value=132, value=40, key="m1_labs")
+        num_procedures     = st.number_input("Number of Medical Procedures", min_value=0, max_value=6, value=1, key="m1_procs")
+        num_medications    = st.number_input("Number of Medications", min_value=1, max_value=81, value=15, key="m1_meds")
+        number_diagnoses   = st.number_input("Number of Diagnoses", min_value=1, max_value=16, value=7, key="m1_diag")
+        number_emergency   = st.number_input("Emergency Visits (Prior Year)", min_value=0, max_value=76, value=0, key="m1_emerg")
+
+    with col3:
+        number_inpatient  = st.number_input("Inpatient Visits (Prior Year)", min_value=0, max_value=21, value=0, key="m1_inp")
+        number_outpatient = st.number_input("Outpatient Visits (Prior Year)", min_value=0, max_value=42, value=0, key="m1_outp")
+
+        a1c_options = {"Not Tested": -1, "Normal": 0, "Elevated (>7%)": 1, "High (>8%)": 2}
+        a1c_label = st.selectbox("A1C Test Result", list(a1c_options.keys()), key="m1_a1c")
+        A1Cresult = a1c_options[a1c_label]
+
+        glu_options = {"Not Tested": -1, "Normal": 0, "High (>200)": 1, "Very High (>300)": 2}
+        glu_label = st.selectbox("Max Glucose Serum", list(glu_options.keys()), key="m1_glu")
+        max_glu_serum = glu_options[glu_label]
+
+        diabetes_med = st.selectbox("On Diabetes Medication?", ["Yes", "No"], key="m1_diabmed")
+        diabetes_med_encoded = 1 if diabetes_med == "Yes" else 0
+
+        insulin = st.selectbox("Insulin?", ["No", "Steady", "Up", "Down"], key="m1_insulin")
+        on_insulin = 0 if insulin == "No" else 1
+
+    st.markdown("---")
+    col_a, col_b, col_c = st.columns(3)
+
+    with col_a:
+        diag_1 = st.selectbox("Primary Diagnosis", ["circulatory","diabetes","digestive","external","missing","other","respiratory"], key="m1_d1")
+        admission_type = st.selectbox("Admission Type", [1,2,3,4,5,6,7,8], key="m1_admtype")
+
+    with col_b:
+        diag_2 = st.selectbox("Secondary Diagnosis", ["circulatory","diabetes","digestive","external","missing","other","respiratory"], key="m1_d2")
+        admission_source = st.selectbox("Admission Source", [1,2,3,4,5,6,7,8,9,10,11,13,14,17,20,22,25], key="m1_admsrc")
+
+    with col_c:
+        diag_3 = st.selectbox("Third Diagnosis", ["circulatory","diabetes","digestive","external","missing","other","respiratory"], key="m1_d3")
+        discharge_disposition = st.selectbox("Discharge Disposition", [1,2,3,4,5,6,7,8,9,10,12,15,16,17,18,22,23,24,25,27,28], key="m1_disc")
+
+    if st.button("Predict Readmission Risk", key="m1_predict"):
+        # build base input row — all zeros first
+        input_df = pd.DataFrame([{col: 0 for col in feature_cols1}])
+
+        # fill in numeric features
+        input_df['age']                = age
+        input_df['time_in_hospital']   = time_in_hospital
+        input_df['num_lab_procedures'] = num_lab_procedures
+        input_df['num_procedures']     = num_procedures
+        input_df['num_medications']    = num_medications
+        input_df['number_diagnoses']   = number_diagnoses
+        input_df['number_emergency']   = number_emergency
+        input_df['number_inpatient']   = number_inpatient
+        input_df['max_glu_serum']      = max_glu_serum
+        input_df['A1Cresult']          = A1Cresult
+        input_df['gender']             = gender_encoded
+        input_df['weight_checked']     = weight_checked
+        input_df['diabetesMed']        = diabetes_med_encoded
+        input_df['on_insulin']         = on_insulin
+
+        # engineered features — must match pipeline
+        input_df['total_prior_visits']    = number_inpatient + number_outpatient + number_emergency
+        input_df['high_risk_prior']       = 1 if number_inpatient >= 2 else 0
+        input_df['los_x_inpatient']       = time_in_hospital * number_inpatient
+        input_df['inpatient_x_medications'] = number_inpatient * num_medications
+        input_df['complexity_score']      = num_lab_procedures + num_medications + number_diagnoses + number_inpatient + number_outpatient + number_emergency
+
+        # one-hot encoded fields — set the matching column to 1 if it exists
+        for col_name in [
+            f"race_{race}",
+            f"diag_1_{diag_1}",
+            f"diag_2_{diag_2}",
+            f"diag_3_{diag_3}",
+            f"admission_type_id_{admission_type}",
+            f"admission_source_id_{admission_source}",
+            f"discharge_disposition_id_{discharge_disposition}",
+        ]:
+            if col_name in input_df.columns:
+                input_df[col_name] = 1
+
+        # align to training column order
+        input_df = input_df[feature_cols1]
+
+        proba = model1.predict_proba(input_df)[0][1]
+        pred  = int(proba >= 0.5)
+        confidence = abs(proba - 0.5) * 2
+
+        st.markdown("---")
+        if pred == 1:
+            st.error(f"⚠️ High Readmission Risk — Probability: {proba:.1%}")
+        else:
+            st.success(f"✅ Low Readmission Risk — Probability: {proba:.1%}")
+
+        st.write(f"**Model Confidence:** {confidence:.1%}")
+        st.caption("This prediction is intended to support clinical decision-making, not replace it.")
+#model 2 buffer -----
 elif model_choice == "Model 2: Deep Learning":
-    st.header("Model 2: Deep Learning")
-    # TODO: Load your DNN model and add prediction interface
-    # Same pattern as Model 1, but load with:
-    #     import tensorflow as tf
-    #     model = tf.keras.models.load_model("models/model2_deep_learning/saved_model/model.keras")
-    st.info("Not yet implemented — load your model and add input fields here.")
+    st.header("Model 2: Readmission Risk — Deep Neural Network")
+    st.write("Same readmission prediction task as Model 1, using a Keras DNN instead of XGBoost.")
 
+    @st.cache_resource
+    def load_model2():
+        import tensorflow as tf
+
+        model_url   = "https://huggingface.co/jfranklingoff/Capstone-Project-Deep-Learning/resolve/main/model.keras"
+        cols_url    = "https://huggingface.co/jfranklingoff/Capstone-Project-Deep-Learning/resolve/main/feature_cols.joblib"
+        imputer_url = "https://huggingface.co/jfranklingoff/Capstone-Project-Deep-Learning/resolve/main/imputer.joblib"
+        scaler_url  = "https://huggingface.co/jfranklingoff/Capstone-Project-Deep-Learning/resolve/main/scaler.joblib"
+
+        model_path   = Path("model2_model.keras")
+        cols_path    = Path("model2_feature_cols.joblib")
+        imputer_path = Path("model2_imputer.joblib")
+        scaler_path  = Path("model2_scaler.joblib")
+
+        for url, path in [
+            (model_url,   model_path),
+            (cols_url,    cols_path),
+            (imputer_url, imputer_path),
+            (scaler_url,  scaler_path),
+        ]:
+            if not path.exists():
+                r = requests.get(url)
+                r.raise_for_status()
+                path.write_bytes(r.content)
+
+        model        = tf.keras.models.load_model(model_path)
+        feature_cols = joblib.load(cols_path)
+        imputer      = joblib.load(imputer_path)
+        scaler       = joblib.load(scaler_path)
+        return model, feature_cols, imputer, scaler
+
+    with st.spinner("Loading Model 2 (this may take a moment)..."):
+        model2, feature_cols2, imputer2, scaler2 = load_model2()
+
+    st.subheader("Enter Patient Information")
+
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        age_options2 = {
+            "0–10": 5, "10–20": 15, "20–30": 25, "30–40": 35, "40–50": 45,
+            "50–60": 55, "60–70": 65, "70–80": 75, "80–90": 85, "90–100": 95
+        }
+        age_label2 = st.selectbox("Age Range", list(age_options2.keys()), key="m2_age")
+        age2 = age_options2[age_label2]
+
+        gender2 = st.selectbox("Gender", ["Male", "Female"], key="m2_gender")
+        gender_encoded2 = 0 if gender2 == "Male" else 1
+
+        race2 = st.selectbox("Race", ["AfricanAmerican", "Asian", "Caucasian", "Hispanic"], key="m2_race")
+
+        time_in_hospital2 = st.number_input("Days in Hospital", min_value=1, max_value=14, value=4, key="m2_los")
+
+        weight_checked2 = st.selectbox("Weight Recorded?", ["No", "Yes"], key="m2_weight")
+        weight_checked2 = 1 if weight_checked2 == "Yes" else 0
+
+    with col2:
+        num_lab_procedures2 = st.number_input("Number of Lab Procedures", min_value=1, max_value=132, value=40, key="m2_labs")
+        num_procedures2     = st.number_input("Number of Medical Procedures", min_value=0, max_value=6, value=1, key="m2_procs")
+        num_medications2    = st.number_input("Number of Medications", min_value=1, max_value=81, value=15, key="m2_meds")
+        number_diagnoses2   = st.number_input("Number of Diagnoses", min_value=1, max_value=16, value=7, key="m2_diag")
+        number_emergency2   = st.number_input("Emergency Visits (Prior Year)", min_value=0, max_value=76, value=0, key="m2_emerg")
+
+    with col3:
+        number_inpatient2  = st.number_input("Inpatient Visits (Prior Year)", min_value=0, max_value=21, value=0, key="m2_inp")
+        number_outpatient2 = st.number_input("Outpatient Visits (Prior Year)", min_value=0, max_value=42, value=0, key="m2_outp")
+
+        a1c_options2 = {"Not Tested": -1, "Normal": 0, "Elevated (>7%)": 1, "High (>8%)": 2}
+        a1c_label2 = st.selectbox("A1C Test Result", list(a1c_options2.keys()), key="m2_a1c")
+        A1Cresult2 = a1c_options2[a1c_label2]
+
+        glu_options2 = {"Not Tested": -1, "Normal": 0, "High (>200)": 1, "Very High (>300)": 2}
+        glu_label2 = st.selectbox("Max Glucose Serum", list(glu_options2.keys()), key="m2_glu")
+        max_glu_serum2 = glu_options2[glu_label2]
+
+        diabetes_med2 = st.selectbox("On Diabetes Medication?", ["Yes", "No"], key="m2_diabmed")
+        diabetes_med_encoded2 = 1 if diabetes_med2 == "Yes" else 0
+
+        insulin2 = st.selectbox("Insulin?", ["No", "Steady", "Up", "Down"], key="m2_insulin")
+        on_insulin2 = 0 if insulin2 == "No" else 1
+
+    st.markdown("---")
+    col_a, col_b, col_c = st.columns(3)
+
+    with col_a:
+        diag_1b = st.selectbox("Primary Diagnosis", ["circulatory","diabetes","digestive","external","missing","other","respiratory"], key="m2_d1")
+        admission_type2 = st.selectbox("Admission Type", [1,2,3,4,5,6,7,8], key="m2_admtype")
+
+    with col_b:
+        diag_2b = st.selectbox("Secondary Diagnosis", ["circulatory","diabetes","digestive","external","missing","other","respiratory"], key="m2_d2")
+        admission_source2 = st.selectbox("Admission Source", [1,2,3,4,5,6,7,8,9,10,11,13,14,17,20,22,25], key="m2_admsrc")
+
+    with col_c:
+        diag_3b = st.selectbox("Third Diagnosis", ["circulatory","diabetes","digestive","external","missing","other","respiratory"], key="m2_d3")
+        discharge_disposition2 = st.selectbox("Discharge Disposition", [1,2,3,4,5,6,7,8,9,10,12,15,16,17,18,22,23,24,25,27,28], key="m2_disc")
+
+    if st.button("Predict Readmission Risk", key="m2_predict"):
+        # build base input row — all zeros first
+        input_df2 = pd.DataFrame([{col: 0 for col in feature_cols2}])
+
+        # fill numeric features
+        input_df2['age']                = age2
+        input_df2['time_in_hospital']   = time_in_hospital2
+        input_df2['num_lab_procedures'] = num_lab_procedures2
+        input_df2['num_procedures']     = num_procedures2
+        input_df2['num_medications']    = num_medications2
+        input_df2['number_diagnoses']   = number_diagnoses2
+        input_df2['number_emergency']   = number_emergency2
+        input_df2['number_inpatient']   = number_inpatient2
+        input_df2['max_glu_serum']      = max_glu_serum2
+        input_df2['A1Cresult']          = A1Cresult2
+        input_df2['gender']             = gender_encoded2
+        input_df2['weight_checked']     = weight_checked2
+        input_df2['diabetesMed']        = diabetes_med_encoded2
+        input_df2['on_insulin']         = on_insulin2
+
+        # engineered features — must match pipeline exactly
+        input_df2['total_prior_visits']      = number_inpatient2 + number_outpatient2 + number_emergency2
+        input_df2['high_risk_prior']         = 1 if number_inpatient2 >= 2 else 0
+        input_df2['los_x_inpatient']         = time_in_hospital2 * number_inpatient2
+        input_df2['inpatient_x_medications'] = number_inpatient2 * num_medications2
+        input_df2['complexity_score']        = num_lab_procedures2 + num_medications2 + number_diagnoses2 + number_inpatient2 + number_outpatient2 + number_emergency2
+
+        # one-hot encoded fields
+        for col_name in [
+            f"race_{race2}",
+            f"diag_1_{diag_1b}",
+            f"diag_2_{diag_2b}",
+            f"diag_3_{diag_3b}",
+            f"admission_type_id_{admission_type2}",
+            f"admission_source_id_{admission_source2}",
+            f"discharge_disposition_id_{discharge_disposition2}",
+        ]:
+            if col_name in input_df2.columns:
+                input_df2[col_name] = 1
+
+        # align columns then apply saved imputer and scaler
+        input_df2 = input_df2[feature_cols2]
+        X = imputer2.transform(input_df2)
+        X = scaler2.transform(X)
+
+        proba2 = float(model2.predict(X, verbose=0).flatten()[0])
+        pred2  = int(proba2 >= 0.5)
+        confidence2 = abs(proba2 - 0.5) * 2
+
+        st.markdown("---")
+        if pred2 == 1:
+            st.error(f"⚠️ High Readmission Risk — Probability: {proba2:.1%}")
+        else:
+            st.success(f"✅ Low Readmission Risk — Probability: {proba2:.1%}")
+
+        st.write(f"**Model Confidence:** {confidence2:.1%}")
+        st.caption("This prediction is intended to support clinical decision-making, not replace it.")
+#model3 buffer ----- 
 elif model_choice == "Model 3: CNN (Image Classification)":
     st.header("Model 3: CNN — Image Classification")
 
