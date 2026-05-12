@@ -10,6 +10,7 @@ data/processed/*.parquet
 *.zip
 *.tar.gz
 webapp/*.joblib
+webapp/*.keras
 
 # Image datasets
 data/raw/images/
