@@ -13,6 +13,8 @@ import pandas as pd
 import joblib
 from urllib.request import urlretrieve
 import requests
+import numpy
+import xgboost
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
