@@ -480,6 +480,8 @@ elif model_choice == "Model 4: NLP (Text Classification)":
 
     import re
 
+    st.info("""To use this model write a patient review — a sentence or two written the way a real person would describe their experience with a medication. That's the kind of text the model was trained on, so that's the only kind of input where the prediction is meaningful.  For example: This medication completely cleared up my symptoms within a week and I had no issues. I feel like myself again.""")
+
     # Must match the cleaning used in models/model4_nlp_classification/predict.py
     CONTRACTIONS = [
         (r"won't", "will not"),
