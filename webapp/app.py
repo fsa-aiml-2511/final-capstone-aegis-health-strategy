@@ -860,5 +860,5 @@ elif model_choice == "Our Team":
     st.write("Please meet the members of Aegis Health Strategy")
     st.info("Clifton Rand: Cliff is our Data Engineer and Model 5 lead")
     st.info("Jesse Goff: Jesse is our Model 3 and Presentation lead")
-    st.info("Sean McManus: Sean is our Model 1 lead")
+    st.info("Sean McManus: Sean is our Model 1 and Model 2 lead")
     st.info("Brodie Ellis: Brodie is our Model 4 lead")
