@@ -2,21 +2,25 @@
 data/raw/*.csv
 data/raw/*.json
 data/raw/*.parquet
+data/raw/healthcare_csvs/*.csv
+data/raw/retinal_scan_images/*.png
 data/processed/*.csv
 data/processed/*.json
 data/processed/*.parquet
 *.zip
 *.tar.gz
+webapp/*.joblib
+webapp/*.keras
+/*.keras
+/*.joblib
 
 # Image datasets
 data/raw/images/
 data/processed/images/
 
 # Model weights and artifacts
-models/*/saved_model/*.joblib
 models/*/saved_model/*.pkl
 models/*/saved_model/*.h5
-models/*/saved_model/*.keras
 models/*/saved_model/*.safetensors
 models/*/saved_model/*.bin
 models/*/saved_model/*.onnx

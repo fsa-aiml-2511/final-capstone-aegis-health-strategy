@@ -1,136 +1,130 @@
 #!/usr/bin/env python3
 """
-Model 4: NLP Classification — Training Script
-===============================================
-Train a text classification model on your scenario's text data.
-
-Approaches (pick one):
-- TF-IDF + traditional classifier (simplest, often surprisingly good)
-- LSTM / GRU neural network
-- Fine-tuned transformer (BERT, DistilBERT)
-
-IMPORTANT: Save your vectorizer/tokenizer alongside the model — you'll need
-the same text preprocessing at prediction time.
+Model 4: NLP Classification - Training Script
+Classifies patient drug reviews into 3 effectiveness categories.
 """
+
+import re
+import joblib
+import pandas as pd
+import numpy as np
 from pathlib import Path
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report, confusion_matrix, f1_score
 
-PROCESSED_DATA = Path("data/processed/")
-SAVED_MODEL_DIR = Path("models/model4_nlp_classification/saved_model/")
-
-
-def load_data():
-    """Load text data from data/processed/.
-
-    Use the shared pipeline:
-        from pipelines.data_pipeline import load_processed_data
-        df = load_processed_data()
-    """
-    # TODO: Load your text dataset
-    raise NotImplementedError
+# paths
+RAW_DATA = Path(__file__).resolve().parents[2] / "data" / "raw" / "healthcare_csvs" / "patient_medication_feedback.csv"
+SAVE_DIR = Path(__file__).resolve().parent / "saved_model"
 
 
-def preprocess_text(texts):
-    """Clean and prepare text for modeling.
-
-    Common steps:
-    - Lowercase
-    - Remove special characters, HTML tags
-    - Handle abbreviations and slang
-    - Tokenize
-    - Remove stopwords (optional — sometimes they help)
-
-    IMPORTANT: Apply the SAME preprocessing at prediction time.
-    """
-    # TODO: Clean your text data
-    raise NotImplementedError
+# map the 5 raw effectiveness labels down to 3
+EFFECTIVENESS_MAP = {
+    'Highly Effective': 'Highly Effective',
+    'Considerably Effective': 'Somewhat Effective',
+    'Moderately Effective': 'Somewhat Effective',
+    'Marginally Effective': 'Somewhat Effective',
+    'Ineffective': 'Ineffective',
+}
 
 
-def vectorize_text(texts):
-    """Convert text to numerical features.
-
-    Option 1 — TF-IDF (simplest):
-        from sklearn.feature_extraction.text import TfidfVectorizer
-        vectorizer = TfidfVectorizer(max_features=10000, ngram_range=(1, 2))
-        X = vectorizer.fit_transform(texts)
-        # Save vectorizer! You need it at prediction time.
-        joblib.dump(vectorizer, SAVED_MODEL_DIR / "vectorizer.joblib")
-
-    Option 2 — Embeddings (for neural network approaches):
-        from tensorflow.keras.preprocessing.text import Tokenizer
-        tokenizer = Tokenizer(num_words=10000)
-        tokenizer.fit_on_texts(texts)
-    """
-    # TODO: Vectorize your text
-    raise NotImplementedError
-
-
-def train_model(X_train, y_train):
-    """Train your text classifier.
-
-    TF-IDF approach:
-        from sklearn.linear_model import LogisticRegression
-        model = LogisticRegression(class_weight='balanced', max_iter=1000)
-        model.fit(X_train, y_train)
-
-    Neural network approach:
-        import tensorflow as tf
-        model = tf.keras.Sequential([...])
-    """
-    # TODO: Train your model
-    raise NotImplementedError
+def clean_text(text):
+    """basic text cleaning for review strings"""
+    if not isinstance(text, str) or text.strip() == '':
+        return ''
+    text = text.lower()
+    # strip html-ish stuff
+    text = re.sub(r'<.*?>', ' ', text)
+    # get rid of urls
+    text = re.sub(r'http\S+|www\.\S+', '', text)
+    # unicode junk like %u2019 etc
+    text = re.sub(r'%u[0-9a-fA-F]{4}', ' ', text)
+    # keep letters, numbers, spaces only
+    text = re.sub(r'[^a-z0-9\s]', ' ', text)
+    # collapse whitespace
+    text = re.sub(r'\s+', ' ', text).strip()
+    return text
 
 
-def evaluate_model(model, X_val, y_val):
-    """Evaluate NLP model performance.
+def load_and_prep():
+    """load the raw csv and get it ready for training"""
+    df = pd.read_csv(RAW_DATA)
 
-    Must include:
-    - Classification report per category
-    - Weighted F1 score
-    - Confusion matrix
-    - Example predictions with actual text
-    """
-    # TODO: Evaluate your model
-    raise NotImplementedError
+    # map effectiveness to 3 classes
+    df['label'] = df['effectiveness'].str.strip().map(EFFECTIVENESS_MAP)
 
+    # drop anything that didn't map (shouldn't happen but just in case)
+    df = df.dropna(subset=['label'])
 
-def save_model(model):
-    """Save model AND vectorizer/tokenizer.
+    # benefitsReview is the only text column with actual data
+    # sideEffectsReview and commentsReview are entirely null
+    df['clean_text'] = df['benefitsReview'].apply(clean_text)
 
-    IMPORTANT: You must save both the model and the text preprocessor.
+    # drop empty reviews
+    df = df[df['clean_text'].str.len() > 0].copy()
 
-    Example:
-        import joblib
-        SAVED_MODEL_DIR.mkdir(parents=True, exist_ok=True)
-        joblib.dump(model, SAVED_MODEL_DIR / "model.joblib")
-        joblib.dump(vectorizer, SAVED_MODEL_DIR / "vectorizer.joblib")
-    """
-    # TODO: Save your model and vectorizer
-    raise NotImplementedError
+    return df
 
 
 def main():
-    # 1. Load data
-    df = load_data()
+    print("loading data...")
+    df = load_and_prep()
+    print(f"  {len(df)} reviews after cleaning")
+    print(f"  class distribution:\n{df['label'].value_counts().to_string()}\n")
 
-    # 2. Preprocess text
-    # texts = preprocess_text(df["text_column"])
+    X = df['clean_text']
+    y = df['label']
 
-    # 3. Vectorize
-    # X = vectorize_text(texts)
+    # stratified split
+    X_train, X_val, y_train, y_val = train_test_split(
+        X, y, test_size=0.2, random_state=42, stratify=y
+    )
 
-    # 4. Split (use stratified split for imbalanced classes)
-    # X_train, X_val, y_train, y_val = train_test_split(X, y, stratify=y)
+    # tfidf - unigrams and bigrams, cap at 50k features
+    print("fitting tfidf...")
+    tfidf = TfidfVectorizer(
+        max_features=50000,
+        ngram_range=(1, 2),
+        min_df=3,
+        max_df=0.95,
+        sublinear_tf=True,
+    )
+    X_train_vec = tfidf.fit_transform(X_train)
+    X_val_vec = tfidf.transform(X_val)
 
-    # 5. Train
-    # model = train_model(X_train, y_train)
+    # logistic regression w/ balanced class weights since highly effective dominates
+    print("training model...")
+    model = LogisticRegression(
+        class_weight='balanced',
+        max_iter=1000,
+        C=1.0,
+        solver='lbfgs',
+        random_state=42,
+    )
+    model.fit(X_train_vec, y_train)
 
-    # 6. Evaluate
-    # evaluate_model(model, X_val, y_val)
+    # evaluate
+    y_pred = model.predict(X_val_vec)
+    print("\n--- Validation Results ---")
+    print(classification_report(y_val, y_pred))
 
-    # 7. Save model + vectorizer
-    # save_model(model)
+    wf1 = f1_score(y_val, y_pred, average='weighted')
+    acc = (y_pred == y_val.values).mean()
+    print(f"accuracy:    {acc:.4f}")
+    print(f"weighted f1: {wf1:.4f}")
 
-    print("Training complete!")
+    print("\nconfusion matrix:")
+    labels = ['Highly Effective', 'Somewhat Effective', 'Ineffective']
+    cm = confusion_matrix(y_val, y_pred, labels=labels)
+    cm_df = pd.DataFrame(cm, index=labels, columns=labels)
+    print(cm_df)
+
+    # save everything
+    SAVE_DIR.mkdir(parents=True, exist_ok=True)
+    joblib.dump(model, SAVE_DIR / "model.joblib")
+    joblib.dump(tfidf, SAVE_DIR / "tfidf_vectorizer.joblib")
+    print(f"\nmodel and vectorizer saved to {SAVE_DIR}")
 
 
 if __name__ == "__main__":
